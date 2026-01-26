@@ -1,1 +1,1 @@
-- [Optimizer]()
+- [Optimizer](https://github.com/sengmin14/OracleDB/blob/main/%EC%97%94%EC%A7%84/Optimizer.md)
