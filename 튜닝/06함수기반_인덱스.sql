@@ -82,7 +82,6 @@ SELECT * FROM table(dbms_xplan.display_cursor(null, null, 'ALLSTATS LAST'));
 @demo;
 CREATE INDEX emp_hiredate ON emp(hiredate);
 
-
 SELECT ename, hiredate
 FROM emp
 WHERE to_char(hiredate, 'RRRR') = '1980';
