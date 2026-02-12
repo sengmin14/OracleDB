@@ -15,3 +15,6 @@
 - 특정 데이터의 Key를 갖고 있다면 해당 Key를 해싱하여 인덱스를 도출해내고, 이를 이용하여 해당 데이터를 갖는데 시간복잡도 O(1)이 소요된다.
 
 <img width="1280" height="912" alt="Image" src="https://github.com/user-attachments/assets/98f47101-ef69-467a-bea4-d72024f706c1" />
+
+
+https://one-armed-boy.tistory.com/entry/%EC%9E%90%EB%A3%8C%EA%B5%AC%EC%A1%B0-in-DB-%EC%9D%B8%EB%8D%B1%EC%8A%A4
