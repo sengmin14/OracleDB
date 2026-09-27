@@ -2,6 +2,7 @@
 
 CREATE INDEX emp_sal on emp(sal);
 
+-- 튜닝 전
 SELECT ENAME, SAL
 FROM EMP
 ORDER BY SAL ASC;
@@ -23,16 +24,17 @@ SCOTT	3000
 
 /*실행계획에 SORT ORDER BY가 있으면 좋지 않다.*/
 /*FULL TABLE SCAN*/
-SELECT *
-FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
 /*
+| Id  | Operation          | Name | Starts | E-Rows | A-Rows |   A-Time   | Buffers |  OMem |  1Mem | Used-Mem |
+----------------------------------------------------------------------------------------------------------------
 |   0 | SELECT STATEMENT   |      |      1 |        |     14 |00:00:00.01 |       7 |       |       |          |
 |   1 |  SORT ORDER BY     |      |      1 |     14 |     14 |00:00:00.01 |       7 |  2048 |  2048 | 2048  (0)|
 |   2 |   TABLE ACCESS FULL| EMP  |      1 |     14 |     14 |00:00:00.01 |       7 |       |       |          |
 */
 
-
-
+-- 튜닝 후
+-- 이미 SAL은 ascending하게 정렬되어 있다.
 SELECT ENAME, SAL
 FROM EMP
 WHERE SAL >= 0;
@@ -54,8 +56,7 @@ KING	5000
 */
 
 /*SORT ORDERY BY 가 없고 INDEX RANGE SCAN*/
-SELECT *
-FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
 /*
 |   0 | SELECT STATEMENT                    |         |      1 |        |     14 |00:00:00.01 |       2 |
 |   1 |  TABLE ACCESS BY INDEX ROWID BATCHED| EMP     |      1 |     14 |     14 |00:00:00.01 |       2 |
@@ -64,6 +65,7 @@ FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
 
 
 
+-- 튜닝 전
 SELECT ENAME, SAL
 FROM EMP
 WHERE SAL >= 0
@@ -85,25 +87,25 @@ JAMES	950
 SMITH	800
 */
 
-/*INDEX RANGE SCAN DESCENDING 발생*/
 /*TABLE ACCESS BY INDEX ROWID 발생*/
-SELECT *
-FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
+/*INDEX RANGE SCAN DESCENDING 발생*/
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
 /*
+| Id  | Operation                    | Name    | Starts | E-Rows | A-Rows |   A-Time   | Buffers |
+--------------------------------------------------------------------------------------------------
 |   0 | SELECT STATEMENT             |         |      1 |        |     14 |00:00:00.01 |       2 |
 |   1 |  TABLE ACCESS BY INDEX ROWID | EMP     |      1 |     14 |     14 |00:00:00.01 |       2 |
 |*  2 |   INDEX RANGE SCAN DESCENDING| EMP_SAL |      1 |     14 |     14 |00:00:00.01 |       1 |
 */
 
-
-
+-- 튜닝 후
 SELECT /*+ INDEX_DESC(EMP EMP_SAL) */ ENAME, SAL
 FROM EMP
 WHERE SAL >= 0;
 
 /*TABLE ACCESS BY INDEX ROWID BATCHED 발생*/
-SELECT *
-FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
+/*INDEX RANGE SCAN DESCENDING 발생*/
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
 /*
 |   0 | SELECT STATEMENT                    |         |      1 |        |     14 |00:00:00.01 |       2 |
 |   1 |  TABLE ACCESS BY INDEX ROWID BATCHED| EMP     |      1 |     14 |     14 |00:00:00.01 |       2 |
@@ -116,7 +118,7 @@ FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
 
 CREATE INDEX EMP_HIREDATE ON EMP(HIREDATE);
 
-/*튜닝 전*/
+-- 튜닝 전
 SELECT ENAME, HIREDATE
 FROM EMP
 WHERE JOB = 'SALESMAN'
@@ -128,22 +130,19 @@ WARD	81/02/23
 ALLEN	81/02/11
 */
 
-SELECT *
-FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
 /*
 |   0 | SELECT STATEMENT   |      |      1 |        |      4 |00:00:00.01 |       7 |       |       |          |
 |   1 |  SORT ORDER BY     |      |      1 |      4 |      4 |00:00:00.01 |       7 |  2048 |  2048 | 2048  (0)|
 |*  2 |   TABLE ACCESS FULL| EMP  |      1 |      4 |      4 |00:00:00.01 |       7 |       |       |          |
 */
 
-
-
-/*튜닝 후*/
+-- 튜닝 후1
 /*TABLE ACCESS BY INDEX ROWID*/
 SELECT ENAME, HIREDATE
 FROM EMP
 WHERE JOB = 'SALESMAN'
-AND HIREDATE < TO_DATE('9999/12/31', 'RRRR/MM/DD')
+AND HIREDATE < TO_DATE('9999/12/31', 'YYYY/MM/DD')
 ORDER BY hiredate DESC;
 /*
 MARTIN	81/09/10
@@ -152,17 +151,14 @@ WARD	81/02/23
 ALLEN	81/02/11
 */
 
-SELECT *
-FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
 /*
 |   0 | SELECT STATEMENT             |              |      1 |        |      4 |00:00:00.01 |       2 |
 |*  1 |  TABLE ACCESS BY INDEX ROWID | EMP          |      1 |      4 |      4 |00:00:00.01 |       2 |
 |*  2 |   INDEX RANGE SCAN DESCENDING| EMP_HIREDATE |      1 |     14 |     14 |00:00:00.01 |       1 |
 */
 
-
-
-/*튜닝 후2*/
+-- 튜닝 후2
 /*TABLE ACCESS BY INDEX ROWID BATCHED*/
 SELECT /*+ INDEX_DESC(EMP EMP_HIREDATE) */ ENAME, HIREDATE
 FROM EMP
@@ -175,8 +171,7 @@ WARD	81/02/23
 ALLEN	81/02/11
 */
 
-SELECT *
-FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
+SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY_CURSOR(NULL, NULL, 'ALLSTATS LAST'));
 /*
 |   0 | SELECT STATEMENT                    |              |      1 |        |      4 |00:00:00.01 |       2 |
 |*  1 |  TABLE ACCESS BY INDEX ROWID BATCHED| EMP          |      1 |      4 |      4 |00:00:00.01 |       2 |
